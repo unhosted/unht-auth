@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="style.css">
+    <script src="sockethub-client.js"></script>
+    <script src="mustache.js"></script>
+    <script src="app.js"></script>
+  </head>
+  <body data-sockethub-host="unht-beta.heahdk.net"
+        data-sockethub-secret="1234567890">
+    <div id="wrapper"></div>
+  </body>
+
+  <!-- TEMPLATE: login -->
+  <script type="text/mustache" data-template-name="login">
+    <h1>Login</h1>
+    <div id="error" style="display:none"></div>
+    <form data-action="login">
+      <input type="email" name="email" placeholder="email">
+      <br/>
+      <input type="password" name="password" placeholder="password">
+      <div class="buttons">
+        <input type="submit" value="Login">
+      </div>
+    </form>
+  </script>
+
+  <!-- TEMPLATE: list authorizations -->
+  <script type="text/mustache" data-template-name="list">
+    <h1>Authorizations</h1>
+    <table>
+      <tr>
+        <th>Origin</th>
+        <th>Scope</th>
+        <th>Token</th>
+      </tr>
+      {{#authorizations}}
+      <tr>
+        <td>{{origin}}</td>
+        <td>{{scope}}</td>
+        <td>{{token}}</td>
+        <td><button data-origin="{{origin}}" data-scope="{{scope}}" data-action="revoke">Revoke</button></td>
+      </tr>
+      {{/authorizations}}
+    </table>
+  </script>
+
+  <!-- TEMPLATE: authorize app dialog -->
+  <script type="text/mustache" data-template-name="dialog">
+    <h1>Authorize</h1>
+    <p>The app at {{origin}} wants to access the following things:</p>
+    <ul>
+      {{#scope}}
+      <li>{{category}} ({{mode}})</li>
+      {{/scope}}
+    </ul>
+    <div class="buttons">
+      <button data-action="allow" class="default">Allow</button>
+      <button data-action="reject">Reject</button>
+    </div>
+  </script>
+</html>
