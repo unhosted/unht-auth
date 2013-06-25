@@ -18,6 +18,7 @@
   <script type="text/mustache" data-template-name="login">
     <h1>Login</h1>
     <div id="error" style="display:none"></div>
+    <p>Please authenticate for <strong>{{host}}</strong> first</p>
     <form data-action="login">
       <div class="inputs">
         <input type="email" name="email" placeholder="email">
@@ -32,12 +33,16 @@
   <!-- TEMPLATE: list authorizations -->
   <script type="text/mustache" data-template-name="list">
     <h1>Authorizations</h1>
+    <div id="error" style="display:none"></div>
     <table>
       <tr>
         <th>Origin</th>
         <th>Scope</th>
         <th>Token</th>
       </tr>
+      {{#loading}}
+      <tr><td><em>Loading...</em></td></tr>
+      {{/loading}}
       {{#authorizations}}
       <tr>
         <td>{{origin}}</td>
@@ -52,6 +57,7 @@
   <!-- TEMPLATE: authorize app dialog -->
   <script type="text/mustache" data-template-name="dialog">
     <h1>Authorize</h1>
+    <div id="error" style="display:none"></div>
     <p>The app at {{origin}} wants to access the following things:</p>
     <ul>
       {{#scope}}

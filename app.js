@@ -1,7 +1,7 @@
 
 function redirect(params, token) {
   var url = params.redirect_uri + (token ? '#access_token=' + encodeURIComponent(token) : '');
-  alert('redirect: ' + url);
+  document.location = url;
 }
 
 function renderTemplate(name, locals) {
@@ -41,7 +41,8 @@ function setEachAction(name, handler) {
   }
 }
 
-function dialog(params) {
+function dialog(sessionKey, params) {
+  console.log("SCOPE", params.scope);
   var viewLocals = {
     origin: params.origin,
     scope: []
@@ -55,10 +56,15 @@ function dialog(params) {
   renderTemplate('dialog', viewLocals);
 
   setAction('allow', function() {
+    sockethubClient.getBearerToken(sessionKey, params.origin, params.scope).
+      then(function(token) {
+        redirect(params, token);
+      }, function(error) {
+        displayError('getBearerToken failed: ' + error.message);
+      });
   });
   setAction('reject', function() { redirect(params); });
 }
-
 
 function extractOrigin(uri) {
   var md = uri.match(/^(https?:\/\/[^\/]+)\//);
@@ -77,13 +83,21 @@ function parseScope(scopeString) {
   }, {});
 }
 
-function renderListing() {
-  // stub!
-  renderTemplate('list', { authorizations: [] });
-  setEachAction('revoke', function(evt) {});
+function renderListing(sessionKey) {
+  renderTemplate('list', { loading: true });
+  sockethubClient.listBearerTokens(sessionKey).then(function(authz) {
+    renderTemplate('list', { authorizations: authz });
+    setEachAction('revoke', function(evt) { alert('not implemented!'); });
+  }, function(error) { displayError('listBearerTokens failed: ' + error.message); });
 }
 
-function main() {
+function displayError(msg) {
+  var el = document.getElementById('error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function main(sessionKey) {
   var md = document.location.search.match(/\?(.+)/);
   if(md) {
     var params = md[1].split('&').reduce(function(m, kvs) {
@@ -92,11 +106,12 @@ function main() {
       return m;
     }, {});
     if(params.redirect_uri && params.scope) {
-      var origin = extractOrigin(params.redirect_uri);
-      var scope = parseScope(params.scope);
+      params.origin = extractOrigin(params.redirect_uri);
+      params.scope = parseScope(params.scope);
+      dialog(sessionKey, params);
     }
   } else {
-    renderListing();
+    renderListing(sessionKey);
   }
 }
 
@@ -114,6 +129,21 @@ window.onload = function() {
     object: {}
   });
 
+  sockethubClient.declareVerb('listBearerTokens', ['object.sessionKey'], {
+    platform: 'unht-customer',
+    object: {}
+  });
+
+  sockethubClient.declareVerb('getBearerToken', ['object.sessionKey', 'object.origin', 'object.scope'], {
+    platform: 'unht-customer',
+    object: {}
+  });
+
+  sockethubClient.declareVerb('revokeBearerToken', ['object.sessionKey', 'object.origin', 'object.token'], {
+    platform: 'unht-customer',
+    object: {}
+  });
+
   sockethubClient.on('failed', function() {
     alert("Failed to connect to sockethub!");
   });
@@ -123,7 +153,7 @@ window.onload = function() {
     if(localStorage.unhtAuthSessionKey) {
       main(localStorage.unhtAuthSessionKey);
     } else {
-      renderTemplate('login');
+      renderTemplate('login', { host: document.body.getAttribute('data-sockethub-host') });
       document.querySelector('input[name=email]').focus();
       setAction('login', function(evt) {
         evt.preventDefault();
@@ -134,9 +164,7 @@ window.onload = function() {
           localStorage.unhtAuthSessionKey = response.object.sessionKey;
           main(localStorage.unhtAuthSessionKey);
         }, function(error) {
-          var el = document.getElementById('error');
-          el.textContent = error.message;
-          el.style.display = 'block';
+          displayError('getSession failed: ' + error.message);
         });
       });
     }
