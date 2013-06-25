@@ -124,6 +124,7 @@ window.onload = function() {
       main(localStorage.unhtAuthSessionKey);
     } else {
       renderTemplate('login');
+      document.querySelector('input[name=email]').focus();
       setAction('login', function(evt) {
         evt.preventDefault();
         sockethubClient.getSession(

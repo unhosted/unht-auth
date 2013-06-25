@@ -52,6 +52,23 @@ button.default {
     margin: 0 10px;
 }
 
+.inputs {
+}
+
+.inputs input {
+    display: block;
+    padding: 5px 10px;
+    border: solid 1px #ccc;
+    border-radius: 10px;
+    outline: none;
+    margin: 10px auto 0 auto;
+    width: 200px;
+}
+
+.inputs input:focus {
+    border-color: #333;
+}
+
 #error {
     border: solid 1px #f00;
     padding: 5px;

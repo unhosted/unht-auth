@@ -9,7 +9,9 @@
   </head>
   <body data-sockethub-host="unht-beta.heahdk.net"
         data-sockethub-secret="1234567890">
-    <div id="wrapper"></div>
+    <div id="wrapper">
+      Connecting to backend...
+    </div>
   </body>
 
   <!-- TEMPLATE: login -->
@@ -17,9 +19,10 @@
     <h1>Login</h1>
     <div id="error" style="display:none"></div>
     <form data-action="login">
-      <input type="email" name="email" placeholder="email">
-      <br/>
-      <input type="password" name="password" placeholder="password">
+      <div class="inputs">
+        <input type="email" name="email" placeholder="email">
+        <input type="password" name="password" placeholder="password">
+      </div>
       <div class="buttons">
         <input type="submit" value="Login">
       </div>
