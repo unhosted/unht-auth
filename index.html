@@ -32,6 +32,7 @@
 
   <!-- TEMPLATE: list authorizations -->
   <script type="text/mustache" data-template-name="list">
+    <a href="#" data-action="logout" class="logout-link">Logout</a>
     <h1>Authorizations</h1>
     <div id="error" style="display:none"></div>
     <table>
@@ -43,6 +44,9 @@
       {{#loading}}
       <tr><td><em>Loading...</em></td></tr>
       {{/loading}}
+      {{#empty}}
+      <tr><td><em>(no authorizations found)</em></td></tr>
+      {{/empty}}
       {{#authorizations}}
       <tr>
         <td>{{origin}}</td>
@@ -56,6 +60,7 @@
 
   <!-- TEMPLATE: authorize app dialog -->
   <script type="text/mustache" data-template-name="dialog">
+    <a href="#" data-action="logout" class="logout-link">Logout</a>
     <h1>Authorize</h1>
     <div id="error" style="display:none"></div>
     <p>The app at {{origin}} wants to access the following things:</p>

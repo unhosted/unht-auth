@@ -4,6 +4,9 @@ function redirect(params, token) {
   document.location = url;
 }
 
+var _afterRender = [];
+function afterRender(callback) { _afterRender.push(callback); }
+
 function renderTemplate(name, locals) {
   var el = document.querySelector('script[data-template-name="' + name + '"]');
   if(! el) {
@@ -15,7 +18,14 @@ function renderTemplate(name, locals) {
     );
     throw "Template not found: " + name + " (have: " + templateNames.join(', ') + ")";
   }
-  document.getElementById('wrapper').innerHTML = Mustache.render(el.innerHTML, locals);
+  try {
+    document.getElementById('wrapper').innerHTML = Mustache.render(el.innerHTML, locals);
+  } catch(exc) {
+    console.error("Failed to render template: " + exc.message);
+  }
+  setTimeout(function() {
+    _afterRender.forEach(function(callback) { callback(); });
+  }, 0);
 }
 
 function attachAction(element, handler) {
@@ -85,8 +95,9 @@ function parseScope(scopeString) {
 
 function renderListing(sessionKey) {
   renderTemplate('list', { loading: true });
-  sockethubClient.listBearerTokens(sessionKey).then(function(authz) {
-    renderTemplate('list', { authorizations: authz });
+  sockethubClient.listBearerTokens(sessionKey).then(function(response) {
+    var tokens = response.object.tokens;
+    renderTemplate('list', { authorizations: tokens, empty: !tokens.length });
     setEachAction('revoke', function(evt) { alert('not implemented!'); });
   }, function(error) { displayError('listBearerTokens failed: ' + error.message); });
 }
@@ -99,6 +110,13 @@ function displayError(msg) {
 
 function main(sessionKey) {
   var md = document.location.search.match(/\?(.+)/);
+  afterRender(function() {
+    setAction('logout', function() {
+      delete localStorage.unhtAuthSessionKey;
+      document.location = '/';
+    });
+  });
+
   if(md) {
     var params = md[1].split('&').reduce(function(m, kvs) {
       var kv = kvs.split('=');
@@ -125,22 +143,22 @@ window.onload = function() {
   });
 
   sockethubClient.declareVerb('getSession', ['object.email', 'object.password'], {
-    platform: 'unht-customer',
+    platform: 'customer',
     object: {}
   });
 
   sockethubClient.declareVerb('listBearerTokens', ['object.sessionKey'], {
-    platform: 'unht-customer',
+    platform: 'customer',
     object: {}
   });
 
   sockethubClient.declareVerb('getBearerToken', ['object.sessionKey', 'object.origin', 'object.scope'], {
-    platform: 'unht-customer',
+    platform: 'customer',
     object: {}
   });
 
   sockethubClient.declareVerb('revokeBearerToken', ['object.sessionKey', 'object.origin', 'object.token'], {
-    platform: 'unht-customer',
+    platform: 'customer',
     object: {}
   });
 
@@ -161,8 +179,12 @@ window.onload = function() {
           evt.target.email.value,
           evt.target.password.value
         ).then(function(response) {
-          localStorage.unhtAuthSessionKey = response.object.sessionKey;
-          main(localStorage.unhtAuthSessionKey);
+          if(response.status) {
+            localStorage.unhtAuthSessionKey = response.object.sessionKey;
+            main(localStorage.unhtAuthSessionKey);
+          } else {
+            displayError("Login failed: " + response.message);
+          }
         }, function(error) {
           displayError('getSession failed: ' + error.message);
         });
